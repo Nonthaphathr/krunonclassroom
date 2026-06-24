@@ -848,6 +848,7 @@ input:focus::placeholder, textarea:focus::placeholder { opacity:0.4; }
         <div class="fg"><label class="fl">ชื่อหน้า / ห้องเรียน</label><input type="text" id="cfg-title" placeholder="ห้องเรียนครูนนท์"></div>
         <div class="fg"><label class="fl">คำอธิบาย / คติประจำใจ</label><textarea id="cfg-sub" placeholder="เช่น ครูสอนภาษาไทย · วรรณคดีคือสมบัติของแผ่นดิน"></textarea></div>
         <div class="fg"><label class="fl">ข้อความท้ายหน้า (footer)</label><input type="text" id="cfg-foot" placeholder="ห้องเรียนออนไลน์ · ครูนนทภัทร"></div>
+        <div class="fg"><label class="fl">ชื่อครูผู้พัฒนา (แสดงในเอกสารพิมพ์ QR)</label><input type="text" id="cfg-dev" placeholder="เช่น ครูนนทภัทร"></div>
         <div class="fg"><label class="fl">เปลี่ยนรหัสผ่าน</label><input type="password" id="cfg-pw" placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน"></div>
       </div>
 
@@ -966,14 +967,14 @@ input:focus::placeholder, textarea:focus::placeholder { opacity:0.4; }
 // ─── STATE ───
 const DEFAULT_PROFILE = {
   title:'ห้องเรียนครูนนท์', subtitle:'ครูสอนภาษาไทย · วรรณคดีคือสมบัติของแผ่นดิน',
-  footer:'ห้องเรียนออนไลน์ · ครูนนทภัทร', logoUrl:'',
+  footer:'ห้องเรียนออนไลน์ · ครูนนทภัทร', developer:'ครูนนทภัทร', logoUrl:'',
   bgImage:'', bgOpacity:0.35,
   accent1:'#2a3b6b', accent2:'#c79a3c', bgColor:'#f5efe1', textColor:'#2b2419',
   links:[], announcements:[]
 };
 
 let store = {
-  password: 'krunon2024',
+  password: '1234',
   activeProfile: 'p1',
   gasEndpoint: '',       // GAS Web App URL (/exec) — ตั้งในแผงจัดการ
   driveFolderId: '',     // Google Drive Folder ID ปลายทาง
@@ -1074,6 +1075,7 @@ function collectForm(){
   p.title    = gi('cfg-title').value||p.title;
   p.subtitle = gi('cfg-sub').value;
   p.footer   = gi('cfg-foot').value;
+  p.developer= gi('cfg-dev').value;
   const pw=gi('cfg-pw').value; if(pw) store.password=pw;
   store.gasEndpoint=gi('cfg-gas').value.trim();
   store.driveFolderId=gi('cfg-folder').value.trim();
@@ -1099,6 +1101,7 @@ function collectForm(){
 function fillForm(){
   const p=ap();
   sv('cfg-title',p.title||''); sv('cfg-sub',p.subtitle||''); sv('cfg-foot',p.footer||'');
+  sv('cfg-dev',p.developer||'');
   sv('cfg-gas',store.gasEndpoint||''); sv('cfg-folder',store.driveFolderId||'');
   syncDriveCfg();
   sv('cfg-logo-url',p.logoUrl||'');
@@ -1423,7 +1426,7 @@ async function checkGas(){
 // ─── AUTH ───
 function doPw(){
   const pw=gi('adm-pw').value;
-  if(pw===store.password||pw==='krunon2024'){
+  if(pw===store.password||pw==='1234'){
     gi('lock-wrap').style.display='none'; gi('adm-panel').style.display='block'; gi('pw-err').style.display='none';
     buildProfileTabs(); fillForm(); renderLinks(); renderAnns(); renderStats();
   } else {
@@ -1492,7 +1495,7 @@ function printQR(){
   const text=(cs.getPropertyValue('--text').trim())||'#2b2419';
   const url=window.location.href.split('#')[0];
   const title=p.title||'ห้องเรียนครูนนท์';
-  const teacher=(p.footer||'ครูผู้พัฒนา').replace(/^ห้องเรียนออนไลน์\s*·\s*/,'');
+  const teacher=p.developer||'';
   const sub=p.subtitle||'';
   const logo=p.logoUrl||'';
 
@@ -1506,12 +1509,12 @@ function printQR(){
 
   const flower='https://nonthaphathr.github.io/uploadimg/thaiflower.png';
   const logoHtml = logo
-    ? `<img class="logo" src="${esc(logo)}" alt="logo" crossorigin="anonymous">`
+    ? `<img class="logo" src="${esc(logo)}" alt="logo" referrerpolicy="no-referrer" onerror="this.onerror=null;this.outerHTML='<div class=\\'logo logo-ph\\'>๛</div>'">`
     : `<div class="logo logo-ph">๛</div>`;
 
   const html = `<!DOCTYPE html><html lang="th"><head><meta charset="UTF-8">
 <title>${esc(title)} — QR แจกนักเรียน</title>
-<link href="https://fonts.googleapis.com/css2?family=Chonburi&family=Sarabun:wght@300;400;500;600;700&family=Charm:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
   @page{ size:A4 portrait; margin:0; }
@@ -1542,15 +1545,15 @@ function printQR(){
   .inner{ position:relative; z-index:2; text-align:center; width:100%; display:flex; flex-direction:column; align-items:center; }
   .logo{ width:36mm; height:36mm; border-radius:50%; object-fit:cover; border:3.5px solid ${surface};
          box-shadow:0 3mm 9mm ${hexA(accent,0.25)}, 0 0 0 2px ${gold}; background:#f3ebd6; }
-  .logo-ph{ display:flex; align-items:center; justify-content:center; font-family:'Chonburi',serif; font-size:19mm; color:${accent}; }
-  .title{ font-family:'Chonburi',serif; font-size:26pt; color:${accent}; margin-top:5mm; line-height:1.2; }
-  .teacher{ font-family:'Charm',cursive; font-size:15pt; color:${accent3}; margin-top:2.5mm; font-weight:700; }
-  .sub{ font-size:11.5pt; color:${text}; opacity:0.7; margin-top:1.5mm; max-width:150mm; }
+  .logo-ph{ display:flex; align-items:center; justify-content:center; font-family:'Sarabun',sans-serif; font-size:19mm; color:${accent}; }
+  .title{ font-family:'Sarabun',sans-serif; font-weight:700; font-size:26pt; color:${accent}; margin-top:5mm; line-height:1.25; }
+  .teacher{ font-family:'Sarabun',sans-serif; font-size:15pt; color:${accent3}; margin-top:2.5mm; font-weight:600; }
+  .sub{ font-family:'Sarabun',sans-serif; font-size:11.5pt; color:${text}; opacity:0.7; margin-top:1.5mm; max-width:150mm; }
 
   .rule{ display:flex; align-items:center; justify-content:center; width:100mm; margin:5mm 0 5mm; }
   .rule .ln{ flex:1; height:1.5px; background:linear-gradient(90deg,transparent,${gold}); }
   .rule .ln.r{ background:linear-gradient(90deg,${gold},transparent); }
-  .rule .mk{ font-family:'Chonburi',serif; color:${gold}; font-size:15pt; margin:0 5mm; }
+  .rule .mk{ font-family:'Sarabun',sans-serif; color:${gold}; font-size:15pt; margin:0 5mm; }
 
   .qr-wrap{ position:relative; padding:6mm; background:#fff; border-radius:6mm; border:2px solid ${gold};
             box-shadow:0 4mm 12mm ${hexA(accent,0.18)}; }
@@ -1581,12 +1584,12 @@ function printQR(){
   <div class="sheet">
     <div class="frame"></div>
     ${cornerSvg(gold,accent)}
-    <img class="deco-fl df1" src="${flower}" crossorigin="anonymous">
-    <img class="deco-fl df2" src="${flower}" crossorigin="anonymous">
+    <img class="deco-fl df1" src="${flower}" referrerpolicy="no-referrer">
+    <img class="deco-fl df2" src="${flower}" referrerpolicy="no-referrer">
     <div class="inner">
       ${logoHtml}
       <div class="title">${esc(title)}</div>
-      <div class="teacher">พัฒนาโดย ${esc(teacher)}</div>
+      ${teacher?`<div class="teacher">พัฒนาโดย ${esc(teacher)}</div>`:''}
       ${sub?`<div class="sub">${esc(sub)}</div>`:''}
       <div class="rule"><span class="ln"></span><span class="mk">๛</span><span class="ln r"></span></div>
       <div class="qr-wrap">
@@ -1664,7 +1667,7 @@ function doExportXlsx(){
   (p.announcements||[]).forEach((a,i)=>{ annData.push([i+1, a]); });
   const wsAnn=XLSX.utils.aoa_to_sheet(annData); wsAnn['!cols']=[{wch:8},{wch:80}];
   XLSX.utils.book_append_sheet(wb, wsAnn, 'ประกาศ');
-  const settingsData=[['การตั้งค่า','ค่า'],['ชื่อโปรไฟล์',p.name||''],['ชื่อเว็บไซต์',p.title||''],['คำอธิบาย',p.subtitle||''],['ข้อความท้ายหน้า',p.footer||''],['URL โลโก้',p.logoUrl||''],['URL ภาพพื้นหลัง',p.bgImage||''],['ความจางพื้นหลัง',(p.bgOpacity!=null?p.bgOpacity:0.35)],['สีหลัก (accent1)',p.accent1||''],['สีรอง (accent2)',p.accent2||''],['สีพื้นหลัง',p.bgColor||''],['สีข้อความ',p.textColor||'']];
+  const settingsData=[['การตั้งค่า','ค่า'],['ชื่อโปรไฟล์',p.name||''],['ชื่อเว็บไซต์',p.title||''],['คำอธิบาย',p.subtitle||''],['ข้อความท้ายหน้า',p.footer||''],['ครูผู้พัฒนา',p.developer||''],['URL โลโก้',p.logoUrl||''],['URL ภาพพื้นหลัง',p.bgImage||''],['ความจางพื้นหลัง',(p.bgOpacity!=null?p.bgOpacity:0.35)],['สีหลัก (accent1)',p.accent1||''],['สีรอง (accent2)',p.accent2||''],['สีพื้นหลัง',p.bgColor||''],['สีข้อความ',p.textColor||'']];
   const wsSet=XLSX.utils.aoa_to_sheet(settingsData); wsSet['!cols']=[{wch:25},{wch:60}];
   XLSX.utils.book_append_sheet(wb, wsSet, 'ตั้งค่า');
   const fname=`ห้องเรียนครูนนท์_${(p.name||'profile').replace(/\s/g,'_')}_${new Date().toISOString().slice(0,10)}.xlsx`;
@@ -1693,6 +1696,7 @@ function doImportXlsx(e){
         if(map['ชื่อเว็บไซต์']) p.title=map['ชื่อเว็บไซต์'];
         if(map['คำอธิบาย']) p.subtitle=map['คำอธิบาย'];
         if(map['ข้อความท้ายหน้า']) p.footer=map['ข้อความท้ายหน้า'];
+        if(map['ครูผู้พัฒนา']!==undefined) p.developer=map['ครูผู้พัฒนา'];
         if(map['URL โลโก้']) p.logoUrl=map['URL โลโก้'];
         if(map['URL ภาพพื้นหลัง']!==undefined) p.bgImage=map['URL ภาพพื้นหลัง'];
         if(map['ความจางพื้นหลัง']!==undefined && map['ความจางพื้นหลัง']!=='') p.bgOpacity=parseFloat(map['ความจางพื้นหลัง'])||0.35;
@@ -1800,10 +1804,10 @@ function toast(msg,type='ok'){ const t=gi('toast'); t.textContent=msg; t.classNa
     "authDomain": "krunonclassroom.firebaseapp.com"
   },
   "storeKeys": ["password", "activeProfile", "gasEndpoint", "driveFolderId", "profiles"],
-  "profileKeys": ["name", "title", "subtitle", "footer", "logoUrl", "bgImage", "bgOpacity", "accent1", "accent2", "bgColor", "textColor", "links", "announcements"],
+  "profileKeys": ["name", "title", "subtitle", "footer", "developer", "logoUrl", "bgImage", "bgOpacity", "accent1", "accent2", "bgColor", "textColor", "links", "announcements"],
   "linkKeys": ["label", "url", "imgUrl", "clicks"],
   "uploadMethod": "GAS_DRIVE_NOCORS_POLL",
-  "defaultPassword": "krunon2024",
+  "defaultPassword": "1234",
   "configurable": {
     "gasEndpoint": "GAS Web App URL (/exec) — ใส่ในแผงจัดการ หรือฉีดผ่าน config generator",
     "driveFolderId": "Google Drive Folder ID ปลายทางของไฟล์อัปโหลด"
