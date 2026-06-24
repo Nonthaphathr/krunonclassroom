@@ -1517,13 +1517,13 @@ function printQR(){
   @page{ size:A4 portrait; margin:0; }
   body{ font-family:'Sarabun',sans-serif; background:#e9e2d0; color:${text}; }
   .sheet{
-    width:210mm; min-height:297mm; margin:0 auto; position:relative;
+    width:210mm; height:296mm; margin:0 auto; position:relative;
     background:
       radial-gradient(ellipse 70% 50% at 50% 0%, ${hexA(gold,0.12)}, transparent 70%),
       radial-gradient(ellipse 80% 55% at 100% 100%, ${hexA(accent,0.08)}, transparent 70%),
       linear-gradient(160deg, ${bg}, ${mix(bg)});
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    padding:34mm 24mm; overflow:hidden;
+    padding:26mm 24mm 30mm; overflow:hidden;
   }
   /* เส้นกรอบทองคู่ */
   .frame{ position:absolute; inset:14mm; border:2.5px solid ${gold}; border-radius:10mm; pointer-events:none; }
@@ -1537,35 +1537,35 @@ function printQR(){
   .c-br{ bottom:9mm; right:9mm; transform:scale(-1); }
   /* ดอกไม้จางมุม */
   .deco-fl{ position:absolute; width:30mm; height:30mm; opacity:0.10; }
-  .df1{ top:40mm; right:22mm; } .df2{ bottom:46mm; left:22mm; transform:rotate(40deg); }
+  .df1{ top:36mm; right:20mm; } .df2{ bottom:40mm; left:20mm; transform:rotate(40deg); }
 
   .inner{ position:relative; z-index:2; text-align:center; width:100%; display:flex; flex-direction:column; align-items:center; }
-  .logo{ width:42mm; height:42mm; border-radius:50%; object-fit:cover; border:4px solid ${surface};
-         box-shadow:0 4mm 12mm ${hexA(accent,0.25)}, 0 0 0 2.5px ${gold}; background:#f3ebd6; }
-  .logo-ph{ display:flex; align-items:center; justify-content:center; font-family:'Chonburi',serif; font-size:22mm; color:${accent}; }
-  .title{ font-family:'Chonburi',serif; font-size:30pt; color:${accent}; margin-top:7mm; line-height:1.2; }
-  .teacher{ font-family:'Charm',cursive; font-size:16pt; color:${accent3}; margin-top:3mm; font-weight:700; }
-  .sub{ font-size:12pt; color:${text}; opacity:0.7; margin-top:2mm; max-width:150mm; }
+  .logo{ width:36mm; height:36mm; border-radius:50%; object-fit:cover; border:3.5px solid ${surface};
+         box-shadow:0 3mm 9mm ${hexA(accent,0.25)}, 0 0 0 2px ${gold}; background:#f3ebd6; }
+  .logo-ph{ display:flex; align-items:center; justify-content:center; font-family:'Chonburi',serif; font-size:19mm; color:${accent}; }
+  .title{ font-family:'Chonburi',serif; font-size:26pt; color:${accent}; margin-top:5mm; line-height:1.2; }
+  .teacher{ font-family:'Charm',cursive; font-size:15pt; color:${accent3}; margin-top:2.5mm; font-weight:700; }
+  .sub{ font-size:11.5pt; color:${text}; opacity:0.7; margin-top:1.5mm; max-width:150mm; }
 
-  .rule{ display:flex; align-items:center; justify-content:center; width:110mm; margin:9mm 0 7mm; }
+  .rule{ display:flex; align-items:center; justify-content:center; width:100mm; margin:5mm 0 5mm; }
   .rule .ln{ flex:1; height:1.5px; background:linear-gradient(90deg,transparent,${gold}); }
   .rule .ln.r{ background:linear-gradient(90deg,${gold},transparent); }
-  .rule .mk{ font-family:'Chonburi',serif; color:${gold}; font-size:16pt; margin:0 5mm; }
+  .rule .mk{ font-family:'Chonburi',serif; color:${gold}; font-size:15pt; margin:0 5mm; }
 
-  .qr-wrap{ position:relative; padding:7mm; background:#fff; border-radius:7mm; border:2px solid ${gold};
-            box-shadow:0 5mm 16mm ${hexA(accent,0.18)}; }
-  .qr-wrap img{ width:74mm; height:74mm; display:block; }
-  .qr-corner{ position:absolute; width:9mm; height:9mm; border:2.5px solid ${accent}; }
+  .qr-wrap{ position:relative; padding:6mm; background:#fff; border-radius:6mm; border:2px solid ${gold};
+            box-shadow:0 4mm 12mm ${hexA(accent,0.18)}; }
+  .qr-wrap img{ width:66mm; height:66mm; display:block; }
+  .qr-corner{ position:absolute; width:8mm; height:8mm; border:2.5px solid ${accent}; }
   .qc1{ top:-1px; left:-1px; border-right:none; border-bottom:none; border-radius:4mm 0 0 0; }
   .qc2{ top:-1px; right:-1px; border-left:none; border-bottom:none; border-radius:0 4mm 0 0; }
   .qc3{ bottom:-1px; left:-1px; border-right:none; border-top:none; border-radius:0 0 0 4mm; }
   .qc4{ bottom:-1px; right:-1px; border-left:none; border-top:none; border-radius:0 0 4mm 0; }
 
-  .scan-label{ margin-top:8mm; font-size:15pt; font-weight:600; color:${accent}; }
-  .desc{ margin-top:4mm; font-size:12.5pt; color:${text}; opacity:0.85; line-height:1.8; max-width:150mm; }
-  .url-pill{ margin-top:6mm; font-size:10.5pt; color:${accent}; background:${hexA(gold,0.14)};
-             border:1px solid ${hexA(gold,0.4)}; border-radius:30px; padding:3mm 9mm; word-break:break-all; max-width:160mm; }
-  .foot{ position:absolute; bottom:20mm; left:0; right:0; text-align:center; font-size:9.5pt; color:${text}; opacity:0.5; z-index:2; }
+  .scan-label{ margin-top:6mm; font-size:14pt; font-weight:600; color:${accent}; }
+  .desc{ margin-top:3mm; font-size:11.5pt; color:${text}; opacity:0.85; line-height:1.7; max-width:150mm; }
+  .url-pill{ margin-top:5mm; font-size:10pt; color:${accent}; background:${hexA(gold,0.14)};
+             border:1px solid ${hexA(gold,0.4)}; border-radius:30px; padding:2.5mm 8mm; word-break:break-all; max-width:160mm; }
+  .foot{ position:absolute; bottom:16mm; left:0; right:0; text-align:center; font-size:9pt; color:${text}; opacity:0.5; z-index:2; }
 
   @media print{ body{ background:#fff; } .no-print{ display:none !important; } }
   .toolbar{ position:fixed; top:10px; right:10px; z-index:99; display:flex; gap:8px; }
