@@ -319,6 +319,9 @@ nav {
   position:relative; overflow:hidden;
   animation:riseIn 0.6s cubic-bezier(.22,.68,0,1.2) both;
 }
+button.lk { width:100%; font:inherit; cursor:pointer; text-align:left; }
+.lk-arr-copy { font-size:14px; }
+.lk:hover .lk-arr-copy span { transform:scale(1.12); }
 .lk::before {
   content:'';
   position:absolute; top:0; left:-100%; width:55%; height:100%;
@@ -432,6 +435,18 @@ nav {
   transition:all 0.2s; z-index:1;
 }
 .modal-close:hover { background:var(--accent3); color:#fff; border-color:var(--accent3); }
+/* ── Mini modal สำหรับคัดลอกข้อความ ── */
+#copy-modal .modal-box { max-width:440px; text-align:left; }
+.copy-modal-ta {
+  width:100%; box-sizing:border-box; min-height:130px; max-height:46vh; resize:vertical;
+  font-family:'Sarabun',sans-serif; font-size:14px; line-height:1.6;
+  padding:13px 15px; border:1.5px solid var(--border); border-radius:14px;
+  background:var(--surface2); color:var(--text); margin-bottom:14px;
+  white-space:pre-wrap;
+}
+.copy-modal-ta:focus { outline:none; border-color:var(--gold); }
+.copy-modal-actions { display:flex; gap:10px; }
+.copy-modal-actions .btn { flex:1; }
 
 /* ═══════════════════════════════════════
    ADMIN PAGE
@@ -585,6 +600,26 @@ input:focus::placeholder, textarea:focus::placeholder { opacity:0.4; }
 .lr-img-row { display:flex; align-items:center; gap:8px; margin-top:2px; }
 .lr-img-preview { width:36px; height:36px; border-radius:8px; object-fit:cover; border:1.5px solid var(--border); flex-shrink:0; display:none; }
 .lr-img-preview.has-img { display:block; }
+/* ── ช่องข้อความสำหรับคัดลอก (copy text) ── */
+.lr-copy-toggle {
+  display:flex; align-items:center; gap:6px; margin-top:6px;
+  background:transparent; border:1.5px dashed var(--border); border-radius:9px;
+  color:var(--text-muted); cursor:pointer; font-family:'Sarabun',sans-serif;
+  font-size:12.5px; font-weight:600; padding:7px 12px; transition:all 0.2s; width:100%;
+  justify-content:center;
+}
+.lr-copy-toggle:hover { border-color:var(--gold); color:var(--accent); background:var(--gold-soft); }
+.lr-copy-toggle.active { border-style:solid; border-color:var(--gold); color:var(--accent); background:var(--gold-soft); }
+.lr-copy-wrap { margin-top:6px; }
+.lr-copy-wrap.hidden { display:none; }
+.lr-copy-ta {
+  width:100%; min-height:74px; resize:vertical; box-sizing:border-box;
+  font-family:'Sarabun',sans-serif; font-size:13px; line-height:1.55;
+  padding:9px 11px; border:1.5px solid var(--border); border-radius:10px;
+  background:var(--surface); color:var(--text-mid); transition:border-color 0.2s;
+}
+.lr-copy-ta:focus { outline:none; border-color:var(--gold); }
+.lr-copy-hint { font-size:11px; color:var(--text-muted); margin-top:4px; padding-left:2px; }
 .add-lr {
   width:100%; padding:11px; background:transparent;
   border:2px dashed var(--border); border-radius:var(--radius-sm);
@@ -727,6 +762,20 @@ input:focus::placeholder, textarea:focus::placeholder { opacity:0.4; }
 
 <!-- Toast -->
 <div id="toast"></div>
+
+<!-- Copy Text Modal -->
+<div class="modal-overlay" id="copy-modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeCopyModal()">×</button>
+    <div class="modal-title" id="copy-modal-title">คัดลอกข้อความ</div>
+    <div class="modal-sub">เลือกแล้วคัดลอก หรือกดปุ่ม “คัดลอกข้อความ” ด้านล่าง</div>
+    <textarea class="copy-modal-ta" id="copy-modal-ta" readonly onclick="this.select()"></textarea>
+    <div class="copy-modal-actions">
+      <button class="btn btn-o btn-sm" onclick="closeCopyModal()">ปิด</button>
+      <button class="btn btn-p btn-sm" id="copy-modal-btn" onclick="doCopyModalText()"><span>📋 คัดลอกข้อความ</span></button>
+    </div>
+  </div>
+</div>
 
 <!-- Upload Progress Modal -->
 <div class="modal-overlay" id="up-overlay">
@@ -1091,9 +1140,10 @@ function collectForm(){
   document.querySelectorAll('.lr-data').forEach(r=>{
     const l=r.querySelector('.ll').value.trim(),u=r.querySelector('.lu').value.trim();
     const img=r.querySelector('.li')?.value.trim()||'';
-    if(l||u){
+    const copyText=r.querySelector('.lc-copy')?.value.trim()||'';
+    if(l||u||copyText){
       const prior=oldLinks.find(o=>o.label===l&&o.url===u);
-      newLinks.push({label:l,url:u,imgUrl:img,clicks:(prior?prior.clicks:0)||0});
+      newLinks.push({label:l,url:u,imgUrl:img,copyText,clicks:(prior?prior.clicks:0)||0});
     }
   });
   p.links=newLinks;
@@ -1141,13 +1191,20 @@ function renderPublic(){
   // links
   const lc=gi('pub-links'); lc.innerHTML='';
   (p.links||[]).forEach((l,i)=>{
-    if(!l.label&&!l.url) return;
-    const a=document.createElement('a'); a.className='lk'; a.href=l.url||'#'; a.rel='noopener';
+    if(!l.label&&!l.url&&!l.copyText) return;
+    const isCopy = !!(l.copyText&&l.copyText.trim()) && !l.url;
+    const a=document.createElement(isCopy?'button':'a'); a.className='lk'+(isCopy?' lk-copy':'');
+    if(isCopy){ a.type='button'; } else { a.href=l.url||'#'; a.rel='noopener'; }
     a.style.animationDelay=(i*0.07)+'s';
     const thumbHtml = l.imgUrl ? `<img class="lk-thumb" src="${esc(l.imgUrl)}" alt="" loading="lazy" onerror="this.style.display='none'">` : '';
     const clicksHtml = (l.clicks>0) ? `<span class="lk-clicks">👁 ${l.clicks} ครั้ง</span>` : '';
-    a.innerHTML=`<span class="lk-left">${thumbHtml}<span class="lk-textwrap"><span class="lk-label">${esc(l.label||l.url)}</span>${clicksHtml}</span></span><span class="lk-arr"><span>→</span></span>`;
-    if(l.url){ a.addEventListener('click', e=>{ e.preventDefault(); countClick(i); playLinkTransition(e, l.label||l.url, l.url); }); }
+    const arr = isCopy ? '<span class="lk-arr lk-arr-copy"><span>📋</span></span>' : '<span class="lk-arr"><span>→</span></span>';
+    a.innerHTML=`<span class="lk-left">${thumbHtml}<span class="lk-textwrap"><span class="lk-label">${esc(l.label||l.url||'คัดลอกข้อความ')}</span>${clicksHtml}</span></span>${arr}`;
+    if(isCopy){
+      a.addEventListener('click', e=>{ e.preventDefault(); countClick(i); openCopyModal(l.label||'ข้อความ', l.copyText); });
+    } else if(l.url){
+      a.addEventListener('click', e=>{ e.preventDefault(); countClick(i); playLinkTransition(e, l.label||l.url, l.url); });
+    }
     lc.appendChild(a);
   });
   applyTheme(); applyBg();
@@ -1192,10 +1249,23 @@ function appendLR(l={},i=0){
       <label class="lr-del" style="width:auto;padding:0 10px;cursor:pointer;white-space:nowrap;font-size:12px" title="อัปโหลดรูปจากเครื่อง">
         📤<input type="file" accept=".png,.jpg,.jpeg,.webp" style="display:none" onchange="uploadLinkImg(event,this)">
       </label>
+    </div>
+    <button type="button" class="lr-copy-toggle ${l.copyText?'active':''}" onclick="toggleCopyField(this)">
+      📋 <span>${l.copyText?'แก้ไขข้อความสำหรับคัดลอก':'เพิ่มข้อความสำหรับคัดลอก'}</span>
+    </button>
+    <div class="lr-copy-wrap ${l.copyText?'':'hidden'}">
+      <textarea class="lc-copy lr-copy-ta" placeholder="วางข้อความที่ต้องการให้นักเรียนคัดลอก เช่น โจทย์ คำสั่ง โค้ด ลิงก์ ฯลฯ">${esc(l.copyText||'')}</textarea>
+      <div class="lr-copy-hint">เมื่อกรอกช่องนี้ ปุ่มจะกลายเป็นปุ่ม “คัดลอกข้อความ” — ผู้ใช้กดแล้วจะมีหน้าต่างให้คัดลอก (ไม่จำเป็นต้องมี URL)</div>
     </div>`;
   gi('link-list').appendChild(d);
 }
 function doAddLink(){ appendLR({},document.querySelectorAll('.lr').length); renum(); initDrag(); }
+function toggleCopyField(btn){
+  const wrap=btn.nextElementSibling;
+  const open=wrap.classList.toggle('hidden')===false;
+  btn.classList.toggle('active', open);
+  if(open) wrap.querySelector('.lc-copy')?.focus();
+}
 function renum(){ let n=0; document.querySelectorAll('#link-list .lr-num').forEach(e=>{ n++; e.textContent=`ลิงก์ที่ ${String(n).padStart(2,'0')}`; }); }
 
 function initDrag(){
@@ -1568,7 +1638,7 @@ function printQR(){
   .desc{ margin-top:3mm; font-size:11.5pt; color:${text}; opacity:0.85; line-height:1.7; max-width:150mm; }
   .url-pill{ margin-top:5mm; font-size:10pt; color:${accent}; background:${hexA(gold,0.14)};
              border:1px solid ${hexA(gold,0.4)}; border-radius:30px; padding:2.5mm 8mm; word-break:break-all; max-width:160mm; }
-  .foot{ position:absolute; bottom:16mm; left:0; right:0; text-align:center; font-size:9pt; color:${text}; opacity:0.5; z-index:2; }
+  .foot{ position:absolute; bottom:6mm; left:0; right:0; text-align:center; font-size:9pt; color:${text}; opacity:0.5; z-index:2; }
 
   @media print{ body{ background:#fff; } .no-print{ display:none !important; } }
   .toolbar{ position:fixed; top:10px; right:10px; z-index:99; display:flex; gap:8px; }
@@ -1630,6 +1700,23 @@ function copyLink(){
   });
 }
 
+// ─── COPY TEXT MINI MODAL ───
+function openCopyModal(title, text){
+  gi('copy-modal-title').textContent = title || 'คัดลอกข้อความ';
+  const ta=gi('copy-modal-ta'); ta.value = text || '';
+  const btn=gi('copy-modal-btn'); btn.querySelector('span').textContent='📋 คัดลอกข้อความ';
+  gi('copy-modal').classList.add('show');
+}
+function closeCopyModal(){ gi('copy-modal').classList.remove('show'); }
+function doCopyModalText(){
+  const ta=gi('copy-modal-ta'); const text=ta.value;
+  const done=()=>{ const b=gi('copy-modal-btn'); b.querySelector('span').textContent='✓ คัดลอกแล้ว'; toast('คัดลอกข้อความแล้ว','ok'); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(()=>{ ta.select(); document.execCommand('copy'); done(); });
+  } else { ta.select(); document.execCommand('copy'); done(); }
+}
+gi('copy-modal').addEventListener('click',e=>{ if(e.target.id==='copy-modal') closeCopyModal(); });
+
 // ─── CLICK TRANSITION ───
 function playLinkTransition(e, label, url) {
   const overlay=gi('click-overlay'), ripple=gi('co-ripple'), logoImg=gi('co-logo-img'), logoPh=gi('co-logo-ph'), dest=gi('co-dest');
@@ -1659,9 +1746,9 @@ function playLinkTransition(e, label, url) {
 function doExportXlsx(){
   if(typeof XLSX==='undefined'){ toast('SheetJS ยังไม่โหลด','err'); return; }
   collectForm(); const p=ap(); const wb=XLSX.utils.book_new();
-  const linksData=[['ลำดับ','ชื่อปุ่ม','URL','URL รูปภาพ','จำนวนคลิก']];
-  (p.links||[]).forEach((l,i)=>{ linksData.push([i+1, l.label||'', l.url||'', l.imgUrl||'', l.clicks||0]); });
-  const wsLinks=XLSX.utils.aoa_to_sheet(linksData); wsLinks['!cols']=[{wch:8},{wch:30},{wch:50},{wch:50},{wch:12}];
+  const linksData=[['ลำดับ','ชื่อปุ่ม','URL','URL รูปภาพ','ข้อความคัดลอก','จำนวนคลิก']];
+  (p.links||[]).forEach((l,i)=>{ linksData.push([i+1, l.label||'', l.url||'', l.imgUrl||'', l.copyText||'', l.clicks||0]); });
+  const wsLinks=XLSX.utils.aoa_to_sheet(linksData); wsLinks['!cols']=[{wch:8},{wch:30},{wch:50},{wch:50},{wch:50},{wch:12}];
   XLSX.utils.book_append_sheet(wb, wsLinks, 'ลิงก์');
   const annData=[['ลำดับ','ข้อความประกาศ']];
   (p.announcements||[]).forEach((a,i)=>{ annData.push([i+1, a]); });
@@ -1683,7 +1770,7 @@ function doImportXlsx(e){
       const wsLinks=wb.Sheets['ลิงก์'];
       if(wsLinks){
         const rows=XLSX.utils.sheet_to_json(wsLinks,{header:1}); const newLinks=[];
-        rows.slice(1).forEach(r=>{ if(r.length>=2){ const label=String(r[1]||'').trim(),url=String(r[2]||'').trim(),imgUrl=String(r[3]||'').trim(),clicks=parseInt(r[4])||0; if(label||url) newLinks.push({label,url,imgUrl,clicks}); } });
+        rows.slice(1).forEach(r=>{ if(r.length>=2){ const label=String(r[1]||'').trim(),url=String(r[2]||'').trim(),imgUrl=String(r[3]||'').trim(),copyText=String(r[4]||'').trim(),clicks=parseInt(r[5])||0; if(label||url||copyText) newLinks.push({label,url,imgUrl,copyText,clicks}); } });
         if(newLinks.length){ p.links=newLinks; imported++; }
       }
       const wsAnn=wb.Sheets['ประกาศ'];
@@ -1796,7 +1883,7 @@ function toast(msg,type='ok'){ const t=gi('toast'); t.textContent=msg; t.classNa
 <script type="application/json" data-krunon-appendix="meta" id="krunon-appendix-meta">
 {
   "app": "ห้องเรียนครูนนท์",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "firestore": { "collection": "linktree", "doc": "config" },
   "firebase": {
     "projectId": "krunonclassroom",
@@ -1805,7 +1892,7 @@ function toast(msg,type='ok'){ const t=gi('toast'); t.textContent=msg; t.classNa
   },
   "storeKeys": ["password", "activeProfile", "gasEndpoint", "driveFolderId", "profiles"],
   "profileKeys": ["name", "title", "subtitle", "footer", "developer", "logoUrl", "bgImage", "bgOpacity", "accent1", "accent2", "bgColor", "textColor", "links", "announcements"],
-  "linkKeys": ["label", "url", "imgUrl", "clicks"],
+  "linkKeys": ["label", "url", "imgUrl", "copyText", "clicks"],
   "uploadMethod": "GAS_DRIVE_NOCORS_POLL",
   "defaultPassword": "1234",
   "configurable": {
